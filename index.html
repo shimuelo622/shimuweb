@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShimuWEBS | Agencia Digital</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --bg-card: rgba(20, 20, 20, 0.6);
+            --neon-red: #ff0033;
+            --neon-dark: #99001f;
+            --text-light: #f4f4f4;
+            --text-muted: #9a9a9a;
+            --glow: 0 0 15px rgba(255, 0, 51, 0.5), 0 0 30px rgba(255, 0, 51, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: var(--bg-dark); color: var(--text-light); overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 0%, rgba(255,0,51,0.08) 0%, transparent 70%);
+        }
+
+        @keyframes slideUpFade { 
+            from { opacity: 0; transform: translateY(20px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .apartado { display: none; }
+        .apartado.active { display: block; animation: slideUpFade 0.5s ease forwards; }
+
+        nav {
+            position: fixed; top: 0; width: 100%;
+            background: rgba(5, 5, 5, 0.85); backdrop-filter: blur(15px);
+            padding: 15px 5%; display: flex; flex-direction: column; align-items: center;
+            z-index: 1000; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .logo { font-size: 2rem; font-weight: 800; color: #fff; letter-spacing: 2px; margin-bottom: 12px; }
+        .logo span { color: var(--neon-red); text-shadow: var(--glow); }
+        
+        .tab-menu { display: flex; background: rgba(255, 255, 255, 0.05); border-radius: 30px; padding: 5px; gap: 5px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .tab-btn { background: transparent; border: none; color: var(--text-muted); padding: 8px 20px; border-radius: 25px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
+        .tab-btn:hover { color: #fff; }
+        .tab-btn.active { background: var(--neon-red); color: #fff; box-shadow: 0 0 15px rgba(255,0,51,0.4); }
+
+        .user-bar { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 0.85rem; color: #ccc; }
+        .user-bar button { background: transparent; border: 1px solid rgba(255,0,51,0.5); color: var(--neon-red); padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; }
+
+        @media (max-width: 400px) { .tab-btn { padding: 8px 12px; font-size: 0.85rem; } }
+
+        main { padding-top: 150px; min-height: 100vh; }
+
+        .hero { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 40px 20px; }
+        .hero h1 { font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 800; line-height: 1.1; margin-bottom: 20px; max-width: 900px; }
+        .hero h1 span { background: linear-gradient(90deg, #ff0033, #ff4d6d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 40px rgba(255,0,51,0.3); }
+        .hero p { font-size: 1.1rem; color: var(--text-muted); max-width: 650px; margin-bottom: 40px; font-weight: 300; }
+
+        .btn-container { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-top: 20px; }
+        .btn-premium { padding: 16px 45px; font-size: 1.1rem; font-weight: 600; color: #fff; background: linear-gradient(45deg, var(--neon-dark), var(--neon-red)); border: none; border-radius: 50px; cursor: pointer; text-transform: uppercase; transition: all 0.4s ease; box-shadow: 0 10px 20px rgba(255, 0, 51, 0.2); width: 100%; max-width: 300px; text-align: center; }
+        .btn-premium:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(255, 0, 51, 0.4); background: linear-gradient(45deg, var(--neon-red), #ff4d6d); }
+        .btn-premium:disabled { opacity: 0.7; cursor: not-allowed; }
+        .btn-outline { padding: 14px 45px; font-size: 1rem; font-weight: 600; color: var(--neon-red); background: transparent; border: 2px solid var(--neon-red); border-radius: 50px; cursor: pointer; text-transform: uppercase; transition: all 0.4s ease; width: 100%; max-width: 300px; text-align: center; }
+        .btn-outline:hover { background: rgba(255, 0, 51, 0.1); box-shadow: 0 0 15px rgba(255, 0, 51, 0.3); transform: translateY(-3px); color: #fff; }
+
+        section { padding: 60px 5%; }
+        .section-header { text-align: center; margin-bottom: 60px; }
+        .section-header h2 { font-size: 2.5rem; font-weight: 800; }
+        .section-header h2 span { color: var(--neon-red); }
+        .section-header p { color: var(--text-muted); margin-top: 10px; }
+
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto; }
+        .glass-card { background: var(--bg-card); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); padding: 40px 30px; border-radius: 20px; transition: all 0.4s ease; position: relative; overflow: hidden; }
+        .glass-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, transparent, var(--neon-red), transparent); transform: scaleX(0); transition: transform 0.4s ease; }
+        .glass-card:hover { transform: translateY(-10px); border-color: rgba(255, 0, 51, 0.3); box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .glass-card:hover::before { transform: scaleX(1); }
+        .glass-card h3 { font-size: 1.4rem; margin-bottom: 15px; color: #fff; }
+        .glass-card p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; }
+
+        .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; max-width: 1100px; margin: 0 auto; }
+        .pricing-card { background: rgba(15, 15, 15, 0.8); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; padding: 40px 30px; text-align: center; transition: all 0.4s ease; position: relative; }
+        .pricing-card:hover { transform: translateY(-10px); }
+        .pricing-card.popular { background: linear-gradient(180deg, rgba(255,0,51,0.05) 0%, rgba(15,15,15,0.9) 100%); border-color: rgba(255, 0, 51, 0.4); box-shadow: 0 10px 30px rgba(255, 0, 51, 0.15); transform: scale(1.02); }
+        .pricing-card.popular:hover { transform: scale(1.02) translateY(-10px); box-shadow: 0 15px 40px rgba(255, 0, 51, 0.25); }
+        .popular-badge { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); background: var(--neon-red); color: #fff; font-size: 0.8rem; font-weight: 800; padding: 5px 15px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; box-shadow: var(--glow); }
+
+        .pricing-card h3 { font-size: 1.4rem; color: #fff; margin-bottom: 10px; }
+        .pricing-card .price { font-size: 3rem; font-weight: 800; color: var(--neon-red); margin-bottom: 20px; display: flex; justify-content: center; align-items: baseline; gap: 5px;}
+        .pricing-card .price span { font-size: 1rem; color: var(--text-muted); font-weight: 400; }
+        
+        .features-list { list-style: none; margin: 30px 0; text-align: left; }
+        .features-list li { color: #ccc; font-size: 0.95rem; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px; line-height: 1.5; }
+        .features-list li::before { content: '✔'; color: var(--neon-red); font-weight: bold; }
+
+        .referencias-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 40px; max-width: 1200px; margin: 0 auto; }
+        .proyecto-card { background: rgba(15,15,15,0.8); border-radius: 24px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); transition: all 0.4s ease; cursor: pointer; }
+        .proyecto-card:hover { transform: translateY(-15px); border-color: rgba(255,0,51,0.4); box-shadow: 0 25px 50px rgba(0,0,0,0.6), 0 0 20px rgba(255,0,51,0.15); }
+        .proyecto-img-placeholder { width: 100%; height: 220px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; background-color: #111; }
+        
+        .img-1 { background-image: url('1000411828.jpg'); background-size: cover; background-position: center; }
+        .img-2 { background-image: url('miventana.jpg'); background-size: cover; background-position: center; }
+        
+        .proyecto-img-placeholder::after { content: 'Ver Proyecto'; position: absolute; background: rgba(0,0,0,0.75); color: #fff; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 600; letter-spacing: 1px; opacity: 0; transition: 0.3s; backdrop-filter: blur(4px); }
+        .proyecto-card:hover .proyecto-img-placeholder::after { opacity: 1; }
+        .proyecto-info { padding: 30px; }
+        .proyecto-tag { display: inline-block; background: rgba(255,0,51,0.1); color: var(--neon-red); padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .proyecto-tag.dev { background: rgba(243, 186, 47, 0.1); color: #F3BA2F; }
+        .proyecto-info h3 { font-size: 1.5rem; color: #fff; margin-bottom: 10px; }
+        .proyecto-info p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; }
+
+        .info-badge {
+            display: inline-block;
+            background: rgba(255,0,51,0.1);
+            border: 1px solid rgba(255,0,51,0.3);
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+
+        @keyframes modalEnter { 0% { opacity: 0; transform: scale(0.9) translateY(30px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes backdropFade { 0% { opacity: 0; } 100% { opacity: 1; } }
+
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(12px); align-items: center; justify-content: center; padding: 15px; overflow-y: auto; }
+        .modal.show { display: flex; animation: backdropFade 0.4s ease forwards; }
+        .modal-content { background: linear-gradient(145deg, rgba(20,20,20,0.95), rgba(5,5,5,0.98)); border: 1px solid rgba(255, 0, 51, 0.4); border-radius: 24px; padding: 40px 30px; width: 100%; max-width: 550px; position: relative; box-shadow: 0 25px 50px rgba(0,0,0,0.5); animation: modalEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; max-height: 90vh; overflow-y: auto; }
+        .modal-content::-webkit-scrollbar { width: 6px; }
+        .modal-content::-webkit-scrollbar-thumb { background: rgba(255,0,51,0.5); border-radius: 10px; }
+
+        #auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 5, 5, 0.95); backdrop-filter: blur(20px);
+            z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+
+        .close-btn { position: absolute; top: 15px; right: 15px; width: 32px; height: 32px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--text-muted); cursor: pointer; transition: all 0.3s; z-index: 10; }
+        .close-btn:hover { background: rgba(255,0,51,0.1); color: var(--neon-red); }
+
+        .modal-content h2 { text-align: center; margin-bottom: 15px; font-size: 1.6rem; color: #fff; margin-top: 10px;}
+        .progress-container { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-bottom: 30px; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--neon-red); width: 33.33%; transition: width 0.4s ease; box-shadow: 0 0 10px var(--neon-red); }
+
+        .form-step { display: none; }
+        .form-step.active { display: block; }
+        .form-step h3 { color: var(--neon-red); font-size: 1.1rem; margin-bottom: 20px; border-bottom: 1px solid rgba(255,0,51,0.2); padding-bottom: 10px; }
+
+        fieldset { border: none; padding: 0; margin: 0; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 0.8rem; color: #ccc; margin-bottom: 8px; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;}
+        .form-group label.opcional { color: #888; font-weight: 400; text-transform: none; margin-left: 5px; }
+        
+        .form-group input[type="text"], .form-group input[type="email"], .form-group input[type="password"], .form-group select, .form-group textarea { width: 100%; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; padding: 14px; border-radius: 12px; font-size: 0.95rem; transition: all 0.3s; outline: none; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--neon-red); background: rgba(255, 0, 51, 0.03); box-shadow: 0 0 0 4px rgba(255, 0, 51, 0.1); }
+        .form-group textarea { height: 100px; resize: none; }
+        .form-group textarea.large { height: 140px; }
+
+        .checkbox-group { display: flex; align-items: flex-start; gap: 12px; background: rgba(255,0,51,0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,0,51,0.3); }
+        .checkbox-group input[type="checkbox"] { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--neon-red); cursor: pointer;}
+        .checkbox-group label { font-size: 0.85rem; color: #fff; text-transform: none; font-weight: 400; line-height: 1.5; margin: 0; cursor: pointer;}
+
+        .contact-input-wrapper { position: relative; width: 100%; display: flex; align-items: center; }
+        .contact-icons { position: absolute; left: 15px; display: flex; align-items: center; gap: 8px; pointer-events: none; opacity: 0.9; }
+        .contact-icons svg { stroke: var(--neon-red); }
+        .contact-icons .divider { color: rgba(255,255,255,0.2); font-size: 1.2rem; margin-bottom: 2px; }
+        .contact-input-wrapper input { padding-left: 90px !important; }
+
+        .btn-group { display: flex; gap: 15px; margin-top: 25px; }
+        .btn-next { flex: 2; padding: 16px; border-radius: 12px; font-size: 1rem; width: 100%; }
+        .btn-prev { flex: 1; padding: 16px; border-radius: 12px; font-size: 1rem; font-weight: 600; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #fff; cursor: pointer; transition: 0.3s; }
+        .btn-prev:hover { background: rgba(255,255,255,0.05); border-color: #fff; }
+
+        .btn-google {
+            width: 100%; background: #ffffff; color: #000; font-weight: 600;
+            padding: 14px; border-radius: 12px; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            font-size: 0.95rem; margin-top: 15px; transition: all 0.3s ease;
+        }
+        .btn-google:hover { background: #e6e6e6; transform: translateY(-2px); }
+
+        .auth-switch { text-align: center; margin-top: 20px; font-size: 0.9rem; color: #888; }
+        .auth-switch span { color: var(--neon-red); cursor: pointer; font-weight: 600; text-decoration: underline; }
+
+        .user-account-badge {
+            background: rgba(255,0,51,0.08); border: 1px solid rgba(255,0,51,0.3);
+            border-radius: 12px; padding: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;
+        }
+        .user-account-badge p { font-size: 0.85rem; color: #ccc; margin-bottom: 0; }
+        .user-account-badge strong { color: #fff; font-size: 0.95rem; }
+
+        .resumen-pago { background: rgba(255,0,51,0.05); border: 1px dashed var(--neon-red); border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 20px; }
+        .resumen-pago p { color: #ccc; font-size: 0.85rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;}
+        .resumen-pago h3 { color: var(--neon-red); font-size: 2rem; font-weight: 800; text-shadow: var(--glow); }
+
+        .payment-card { background: rgba(255, 255, 255, 0.03); border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 20px; height: 90px; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: all 0.3s ease; }
+        .payment-card:hover { border-color: #F3BA2F; background: rgba(243, 186, 47, 0.05); }
+        .payment-card.selected { border-color: #F3BA2F; box-shadow: 0 0 15px rgba(243, 186, 47, 0.3); }
+        .payment-icon { height: 35px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .payment-icon.fade-out { opacity: 0; transform: scale(0.5); position: absolute; }
+        .payment-info { opacity: 0; transform: scale(0.5); position: absolute; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); text-align: center; pointer-events: none; }
+        .payment-info.fade-in { opacity: 1; transform: scale(1); }
+        .payment-info p { font-size: 0.75rem; color: #ccc; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;}
+        .payment-info h4 { font-size: 1.4rem; color: #F3BA2F; letter-spacing: 2px; }
+
+        .file-upload-wrapper { position: relative; width: 100%; height: 90px; border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.02); transition: all 0.3s ease; cursor: pointer; overflow: hidden; }
+        .file-upload-wrapper:hover { border-color: var(--neon-red); background: rgba(255, 0, 51, 0.05); }
+        .file-upload-wrapper input[type="file"] { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2; }
+        .file-upload-text { color: #aaa; font-size: 0.95rem; text-align: center; pointer-events: none; z-index: 1; }
+        .file-upload-text span { color: var(--neon-red); font-weight: 600; }
+        .security-warning { font-size: 0.75rem; color: #ff9999; text-align: center; margin-top: 8px; }
+        
+        .scanner-line { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: #4CAF50; box-shadow: 0 0 10px #4CAF50, 0 0 20px #4CAF50; z-index: 0; animation: scan 1.5s ease-in-out infinite alternate; }
+        @keyframes scan { 0% { top: 0%; } 100% { top: 95%; } }
+
+        footer { text-align: center; padding: 40px 20px; border-top: 1px solid rgba(255,255,255,0.05); color: var(--text-muted); font-size: 0.9rem; margin-top: 50px; }
+
+        #auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-dark); 
+            background-image: radial-gradient(circle at 50% 0%, rgba(255,0,51,0.15) 0%, transparent 70%);
+            z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        #btn-logout {
+            display: none; background: transparent; border: 1px solid rgba(255,0,51,0.5); 
+            color: var(--neon-red); padding: 5px 15px; border-radius: 20px; font-size: 0.8rem;
+            cursor: pointer; margin-top: 10px; transition: 0.3s;
+        }
+        #btn-logout:hover { background: rgba(255,0,51,0.1); }
+
+        .alerta-horario {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: linear-gradient(135deg, var(--neon-dark), var(--neon-red));
+            color: #fff;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(255, 0, 51, 0.4);
+            z-index: 9999;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            pointer-events: none;
+            width: 90%;
+            max-width: 400px;
+        }
+        .alerta-horario.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="alerta-horario" class="alerta-horario">
+        🔒 La tienda está cerrada en este momento.<br>
+        <span style="font-size: 0.8rem; font-weight: 400;">Horario de atención: 11:20 AM a 6:30 PM (Hora de Venezuela)</span>
+    </div>
+
+    <nav>
+        <div class="logo">Shimu<span>WEBS</span></div>
+        <div class="tab-menu">
+            <button class="tab-btn active" id="btn-inicio" onclick="cambiarApartado('inicio')">Inicio</button>
+            <button class="tab-btn" id="btn-planes" onclick="cambiarApartado('planes')">Planes</button>
+            <button class="tab-btn" id="btn-referencias" onclick="cambiarApartado('referencias')">Referencias</button>
+        </div>
+        <button id="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+    </nav>
+
+    <div id="auth-overlay">
+        <div class="modal-content" style="max-width: 400px; animation: none;">
+            <div class="logo" style="text-align: center; margin-bottom: 25px;">Shimu<span>WEBS</span></div>
+
+            <form id="form-login" onsubmit="loginEmail(event)">
+                <h2 style="font-size: 1.4rem;">Iniciar Sesión</h2>
+                <div class="form-group">
+                    <input type="email" id="login-email" required placeholder="Correo electrónico">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="login-password" required placeholder="Contraseña">
+                </div>
+                <button type="submit" class="btn-premium" style="width: 100%; padding: 12px;">Entrar</button>
+                <div style="text-align: center; margin: 15px 0; color: #888; font-size: 0.8rem;">O CONTINÚA CON</div>
+                <button type="button" class="btn-outline" onclick="loginGoogle()" style="width: 100%; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20" alt="Google"> Entrar con Google
+                </button>
+                <p style="text-align: center; margin-top: 20px; font-size: 0.9rem; color: #ccc;">¿No tienes cuenta? <span style="color: var(--neon-red); cursor: pointer; font-weight: bold;" onclick="showRegister()">Regístrate abajo</span></p>
+            </form>
+
+            <form id="form-register" onsubmit="registrarEmail(event)" style="display: none;">
+                <h2 style="font-size: 1.4rem;">Crear Cuenta</h2>
+                <div class="form-group">
+                    <input type="text" id="reg-nombre" required placeholder="Nombre y Apellidos completos">
+                </div>
+                <div class="form-group">
+                    <input type="email" id="reg-email" required placeholder="Correo electrónico">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="reg-password" required placeholder="Contraseña" minlength="6">
+                </div>
+                <button type="submit" class="btn-premium" style="width: 100%; padding: 12px;">Registrarse</button>
+                <div style="text-align: center; margin: 15px 0; color: #888; font-size: 0.8rem;">O REGÍSTRATE CON</div>
+                <button type="button" class="btn-outline" onclick="loginGoogle()" style="width: 100%; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20" alt="Google"> Google
+                </button>
+                <p style="text-align: center; margin-top: 20px; font-size: 0.9rem; color: #ccc;">¿Ya tienes cuenta? <span style="color: var(--neon-red); cursor: pointer; font-weight: bold;" onclick="showLogin()">Inicia sesión</span></p>
+            </form>
+        </div>
+    </div>
+
+    <main>
+        <div id="apartado-inicio" class="apartado active">
+            <section class="hero">
+                <h1>Páginas Web y Sistemas <span>A Tu Medida</span></h1>
+                <p>Hacemos realidad tu idea digital. Desde páginas sencillas hasta minijuegos y tiendas online, todo rápido, seguro y con diseños increíbles.</p>
+                
+                <div class="btn-container">
+                    <button class="btn-premium" onclick="cambiarApartado('planes')">Crear mi Proyecto</button>
+                    <button class="btn-outline" onclick="abrirModalSoporte()">Soporte y Consultas</button>
+                </div>
+            </section>
+
+            <section id="servicios">
+                <div class="section-header">
+                    <h2>Lo que <span>Hacemos</span></h2>
+                    <p>Todo lo que necesitas para destacar en internet.</p>
+                </div>
+                <div class="grid-container">
+                    <div class="glass-card"><h3>Diseño Único</h3><p>Olvídate de las plantillas aburridas. Diseñamos tu página desde cero para que se vea exactamente como la imaginas y con tus colores.</p></div>
+                    <div class="glass-card"><h3>Rápida y Adaptable</h3><p>Tu proyecto cargará al instante y se verá perfectamente tanto en computadoras como en cualquier teléfono celular.</p></div>
+                    <div class="glass-card"><h3>Sistemas y Minijuegos</h3><p>No solo hacemos páginas informativas. Programamos tiendas online, paneles de control y hasta tus propios minijuegos web.</p></div>
+                </div>
+            </section>
+        </div>
+
+        <div id="apartado-planes" class="apartado">
+            <section>
+                <div class="section-header">
+                    <h2>Nuestros <span>Planes</span></h2>
+                    <p>Elige el paquete que mejor se adapte a tu idea.</p>
+                </div>
+
+                <div class="pricing-grid">
+                    <div class="pricing-card">
+                        <h3>Landing Page</h3>
+                        <div class="price"><span>Desde</span>$10</div>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">La opción perfecta para empezar rápido y directo al grano.</p>
+                        <ul class="features-list">
+                            <li><span>Diseño en 1 sola página</span></li>
+                            <li><span>Ideal para vender 1 solo producto</span></li>
+                            <li><span>Perfecta como enlace para tu TikTok o Instagram</span></li>
+                        </ul>
+                        <button class="btn-outline" onclick="abrirModalCotizacion('Landing Page', 10)" style="width: 100%;">Elegir Plan</button>
+                    </div>
+
+                    <div class="pricing-card popular">
+                        <div class="popular-badge">Más Vendido</div>
+                        <h3>Web Corporativa</h3>
+                        <div class="price"><span>Desde</span>$30</div>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">Diseñada para negocios que buscan una imagen 100% profesional.</p>
+                        <ul class="features-list">
+                            <li><span>Varias pestañas (Inicio, Nosotros, Servicios, etc.)</span></li>
+                            <li><span>Ideal para empresas, agencias o abogados</span></li>
+                            <li><span>Formulario de contacto y botón de WhatsApp</span></li>
+                        </ul>
+                        <button class="btn-premium" onclick="abrirModalCotizacion('Web Corporativa', 30)" style="width: 100%;">Elegir Plan</button>
+                    </div>
+
+                    <div class="pricing-card">
+                        <h3>Plan Personalizado</h3>
+                        <div class="price"><span>Desde</span>$50</div>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">Programamos cualquier locura que tengas en mente desde cero.</p>
+                        <ul class="features-list">
+                            <li><span>Sistemas de Tiendas Online con carritos de compra</span></li>
+                            <li><span>Plataformas complejas y paneles de administración</span></li>
+                            <li><span>Creación de <strong>Videojuegos Web</strong> interactivos</span></li>
+                        </ul>
+                        <button class="btn-outline" onclick="abrirModalCotizacion('Plan Personalizado', 50)" style="width: 100%;">Elegir Plan</button>
+                    </div>
+
+                    <div class="pricing-card">
+                        <h3>Plan Programa (Software)</h3>
+                        <div class="price"><span>Desde</span>$80</div>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">Desarrollo de software y herramientas personalizadas con seguridad.</p>
+                        <ul class="features-list">
+                            <li><span>Sistema de Registro e inicio de sesión de usuarios</span></li>
+                            <li><span>Generación de <strong>Keys (Licencias)</strong> de acceso</span></li>
+                            <li><span>Desarrollo de herramientas (⚠️ No se hacen cheats)</span></li>
+                            <li><span>Interfaz de usuario (UI) atractiva y a tu medida</span></li>
+                        </ul>
+                        <button class="btn-outline" onclick="abrirModalCotizacion('Plan Programa', 80)" style="width: 100%;">Elegir Plan</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="apartado-referencias" class="apartado">
+            <section>
+                <div class="section-header">
+                    <h2>Nuestras <span>Referencias</span></h2>
+                    <p>Explora la calidad de nuestro código y diseño premium.</p>
+                    <div class="info-badge">👆 Toca cualquier proyecto para visitar la web real</div>
+                </div>
+                
+                <div class="referencias-grid">
+                    <div class="proyecto-card" onclick="window.open('https://futbrawlshimuwebs.netlify.app/', '_blank')">
+                        <div class="proyecto-img-placeholder img-1"></div>
+                        <div class="proyecto-info">
+                            <span class="proyecto-tag">Juego Web</span>
+                            <h3>FUTBRAWL</h3>
+                            <p>Emocionante juego híbrido de fútbol y disparos estilo arcade. Gráficos 3D y controles adaptados para móviles.</p>
+                        </div>
+                    </div>
+
+                    <div class="proyecto-card" onclick="window.open('https://miventana.netlify.app/', '_blank')">
+                        <div class="proyecto-img-placeholder img-2"></div>
+                        <div class="proyecto-info">
+                            <span class="proyecto-tag dev">En Desarrollo</span>
+                            <h3>MiVentana</h3>
+                            <p>Plataforma de Hosting 24/7 y servicios de mantenimiento web premium. Garantiza que tu sitio esté siempre rápido y seguro.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <div id="modal-formulario" class="modal">
+        <div class="modal-content">
+            <div class="close-btn" id="btn-cerrar">&times;</div>
+            <h2 id="titulo-modal">Configura tu Proyecto</h2>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar" style="width: 33.33%;"></div>
+            </div>
+
+            <form id="formulario-web">
+                <div class="form-step active" id="step-1">
+                    <h3>Paso 1: Tus Datos Básicos</h3>
+                    
+                    <div class="form-group">
+                        <label>Tu Nombre o Marca</label>
+                        <input type="text" id="cot-nombre" required placeholder="Ej. Samuel o Mi Empresa">
+                    </div>
+
+                    <div class="form-group">
+                        <label>¿Cómo se llama tu proyecto o página web?</label>
+                        <input type="text" id="cot-nombre-web" required placeholder="Ej. MiTienda.com o El nombre de tu negocio">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Correo Electrónico Registrado <span class="opcional">(Autocompletado)</span></label>
+                        <div class="contact-input-wrapper">
+                            <span class="contact-icons">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                            </span>
+                            <input type="text" id="cot-contacto" required placeholder="Cargando tu correo..." style="padding-left: 45px !important;">
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="button" class="btn-premium btn-next" onclick="siguiente(1)">Continuar</button>
+                    </div>
+                </div>
+
+                <div class="form-step" id="step-2">
+                    <h3>Paso 2: Detalles a tu medida</h3>
+
+                    <div class="form-group">
+                        <label>¿Para qué quieres la página o sistema?</label>
+                        <select id="cot-objetivo" required>
+                            <option value="" disabled selected>Elige una opción...</option>
+                            <option value="Vender un producto o servicio rápido">Para vender un producto o servicio rápido</option>
+                            <option value="Recibir mensajes o correos de clientes">Para recibir mensajes, registros o correos de clientes</option>
+                            <option value="Crear un programa y licencias">Para un software, registro de usuarios y venta de Keys</option>
+                            <option value="Otro">Otro (Especificar)</option>
+                        </select>
+                        <input type="text" id="cot-objetivo-otro" maxlength="400" placeholder="Especifica tu objetivo (Máx 400 caracteres)" style="display: none; margin-top: 10px;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>¿Qué estructura o apartados tendrá?</label>
+                        <input type="text" id="cot-estructura" required placeholder="Ej. Inicio, Beneficios, Galería, Dashboard de Login...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>¿Qué colores te gustaría que tuviera (Estilo/Diseño)?</label>
+                        <input type="text" id="cot-colores" required placeholder="Ej. Fondo negro con textos blancos y detalles en rojo neón...">
+                    </div>
+                    
+                    <fieldset id="campos-landing" disabled style="display: none;">
+                        <div class="form-group">
+                            <label>Explica un poco qué vas a ofrecer en la página</label>
+                            <textarea id="lan-desc" required placeholder="Ej. Voy a vender zapatos, quiero que se vea una foto grande al inicio y un botón de comprar que vaya directo a mi WhatsApp..."></textarea>
+                        </div>
+                    </fieldset>
+
+                    <fieldset id="campos-corporativa" disabled style="display: none;">
+                        <div class="form-group">
+                            <label>¿De qué trata tu negocio?</label>
+                            <input type="text" id="corp-negocio" required placeholder="Ej. Es una tienda de ropa, Soy abogado, Una peluquería...">
+                        </div>
+                        <div class="form-group">
+                            <label>¿Ya tienes un logo para tu marca?</label>
+                            <select id="corp-logo" required>
+                                <option value="" disabled selected>Selecciona una opción...</option>
+                                <option value="Sí, tengo logo">Sí, ya lo tengo listo</option>
+                                <option value="Tengo una idea">No tengo logo, solo una idea o boceto</option>
+                                <option value="Necesito que me hagan un logo">Necesito que me ayuden a crear un logo</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>¿Necesitas algo especial en la página?</label>
+                            <textarea id="corp-extras" required placeholder="Ej. Quiero un botón de WhatsApp fijo en la pantalla, un mapa con la ubicación de mi tienda y un formulario para que me escriban al correo..."></textarea>
+                        </div>
+                    </fieldset>
+
+                    <fieldset id="campos-personalizado" disabled style="display: none;">
+                        <div class="form-group">
+                            <label>¿Qué tipo de sistema o proyecto avanzado es?</label>
+                            <select id="pers-tipo" required>
+                                <option value="" disabled selected>Elige el tipo de proyecto...</option>
+                                <option value="Videojuego Web / Arcade 3D">Un Minijuego Web o Videojuego Arcade (Ej. Futbrawl)</option>
+                                <option value="Tienda Online Avanzada">Una Tienda Online grande (con carritos y pagos directos)</option>
+                                <option value="Panel de Control/Administración">Un panel de control o plataforma para gestionar usuarios</option>
+                                <option value="Sistema a medida">Otro sistema diferente totalmente a medida</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Explica cómo debería funcionar paso a paso</label>
+                            <textarea id="pers-logica" class="large" required placeholder="Ej. Si es un juego: quiero que el personaje corra y dispare tocando la pantalla. Si es un sistema: quiero que la gente entre, se registre con usuario y clave, luego puedan sumar puntos... Sé lo más detallado posible."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>¿Algo más que debamos saber? (Opcional)</label>
+                            <textarea id="pers-extras" placeholder="Ej. Necesito que se pueda pagar con Binance automáticamente, o que el juego guarde el récord más alto de los jugadores..."></textarea>
+                        </div>
+                    </fieldset>
+
+                    <fieldset id="campos-programa" disabled style="display: none;">
+                        <div class="form-group">
+                            <label>¿En qué plataforma funcionará tu Programa/Software?</label>
+                            <select id="prog-plataforma" required>
+                                <option value="" disabled selected>Elige una plataforma...</option>
+                                <option value="Windows (.exe)">Computadora - Windows (.exe)</option>
+                                <option value="Android (.apk)">Celular - Android (.apk)</option>
+                                <option value="Web (Navegador)">Basado en Web (Navegador)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>¿Qué tipo de Seguridad / Autenticación requieres?</label>
+                            <select id="prog-acceso" required>
+                                <option value="" disabled selected>Elige el sistema de seguridad...</option>
+                                <option value="Registro por Usuario y Contraseña">Registro clásico (Usuario y Contraseña)</option>
+                                <option value="Acceso solo por Keys (Licencias)">Acceso ÚNICAMENTE mediante Keys generadas</option>
+                                <option value="Ambos + HWID">Usuario/Clave + Keys atadas al dispositivo (HWID Bind)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Explica Detalladamente la Lógica del Programa</label>
+                            <textarea id="prog-logica" class="large" required placeholder="¿Qué hace exactamente el software? Ej. Quiero una herramienta de optimización de PC donde el usuario ingresa su Key, y al entrar hay botones para limpiar memoria, acelerar conexión, etc."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Política Estricta de ShimuWEBS</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="prog-nocheats" required>
+                                <label for="prog-nocheats"><strong>Comprendo y acepto</strong> que en esta agencia NO se desarrollan cheats, hacks, ni software malicioso de ningún tipo. El software será legítimo o la solicitud será denegada y cancelada.</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Funciones extra requeridas (Opcional)</label>
+                            <textarea id="prog-extras" placeholder="Ej. Necesito un panel administrador secreto para poder generar y borrar las Keys yo mismo..."></textarea>
+                        </div>
+                    </fieldset>
+
+                    <div class="btn-group">
+                        <button type="button" class="btn-prev" onclick="atras(2)">Atrás</button>
+                        <button type="button" class="btn-premium btn-next" onclick="siguiente(2)">Ir al Pago</button>
+                    </div>
+                </div>
+
+                <div class="form-step" id="step-3">
+                    <h3>Paso 3: Cierre y Pago</h3>
+                    
+                    <div class="resumen-pago">
+                        <p>Plan seleccionado: <strong id="resumen-plan" style="color: #fff;">...</strong></p>
+                        <h3>$<span id="resumen-precio">0</span> USD</h3>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Método de Pago Obligatorio (Toca el logo para seleccionar)</label>
+                        
+                        <div style="background: rgba(255, 204, 0, 0.1); border-left: 4px solid #ffcc00; padding: 12px; margin-bottom: 15px; border-radius: 4px;">
+                            <p style="font-size: 0.85rem; color: #ffcc00; margin: 0; line-height: 1.4;">
+                                ⚠️ <strong>ADVERTENCIA:</strong> Es obligatorio subir el comprobante de pago real y darle clic al logo de Binance para poder finalizar la solicitud.
+                            </p>
+                        </div>
+
+                        <div class="payment-card" id="btn-binance">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/e/e8/Binance_Logo.svg" alt="Binance" class="payment-icon" id="icon-binance">
+                            <div class="payment-info" id="info-binance">
+                                <p>Mi ID de Binance (Pay):</p>
+                                <h4>18181818</h4>
+                            </div>
+                        </div>
+                        <input type="text" id="pago-seleccionado" required style="opacity: 0; position: absolute; z-index: -1;">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Sube el comprobante oficial</label>
+                        <div class="file-upload-wrapper" id="upload-box">
+                            <div class="scanner-line" id="scanner"></div>
+                            <input type="file" id="comprobante-pago" accept="image/*" required>
+                            <div class="file-upload-text" id="file-text">
+                                📸 Toca para subir el <span>Comprobante de pago</span>
+                            </div>
+                        </div>
+                        <div class="security-warning">
+                            <span>🛡️</span> Subir fotos falsas causará la cancelación del proyecto y el bloqueo del usuario.
+                        </div>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button type="button" class="btn-prev" onclick="atras(3)">Atrás</button>
+                        <button type="submit" class="btn-premium btn-next" id="btn-final-enviar">Finalizar y Enviar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-soporte" class="modal">
+        <div class="modal-content">
+            <div class="close-btn" onclick="cerrarModalSoporte()">&times;</div>
+            <h2 style="margin-bottom: 25px;">Soporte y Ayuda</h2>
+            
+            <form id="formulario-soporte">
+                <div class="form-group">
+                    <label>Correo Electrónico de Contacto <span class="opcional">(Autocompletado)</span></label>
+                    <div class="contact-input-wrapper">
+                        <span class="contact-icons">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        </span>
+                        <input type="text" id="soporte-contacto" required placeholder="Cargando tu correo..." style="padding-left: 45px !important;">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>¿Has comprado antes con nosotros? <span class="opcional">(Opcional)</span></label>
+                    <select id="soporte-cliente">
+                        <option value="" disabled selected>Selecciona una opción...</option>
+                        <option value="Sí, ya soy cliente">Sí, ya soy cliente</option>
+                        <option value="No, esto es una consulta general">No, esto es una consulta general</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Comprobante de pago anterior / Captura del problema <span class="opcional">(Opcional)</span></label>
+                    <div class="file-upload-wrapper" id="upload-box-soporte">
+                        <input type="file" id="comprobante-soporte" accept="image/*">
+                        <div class="file-upload-text" id="file-text-soporte">
+                            📸 Toca para subir tu <span>Comprobante o Captura</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>¿Qué problema o duda tienes?</label>
+                    <textarea id="soporte-problema" class="large" required maxlength="5555" placeholder="Escribe aquí tu duda, consulta o problema detalladamente."></textarea>
+                </div>
+                
+                <div class="btn-group" style="margin-top: 10px;">
+                    <button type="submit" class="btn-premium btn-next" style="width: 100%;">Enviar Consulta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 ShimuWEBS. Haciendo que internet se vea mejor.</p>
+    </footer>
+
+    <script>
+        let planSeleccionado = "";
+        let precioSeleccionado = 0;
+        let comprobanteValido = false;
+
+        const fileToBase64 = (file) => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+
+        function verificarHorario() {
+            const ahora = new Date();
+            const horaVenezuela = new Date(ahora.getTime() - (4 * 60 * 60 * 1000));
+            const horas = horaVenezuela.getUTCHours();
+            const minutos = horaVenezuela.getUTCMinutes();
+            const horaActualDecimal = horas + (minutos / 60);
+            
+            // 11:20 AM a 6:30 PM
+            const horaApertura = 11.33;
+            const horaCierre = 18.5;
+            
+            return horaActualDecimal >= horaApertura && horaActualDecimal < horaCierre;
+        }
+
+        function mostrarAlertaHorario() {
+            const alerta = document.getElementById('alerta-horario');
+            alerta.classList.add('show');
+            setTimeout(() => {
+                alerta.classList.remove('show');
+            }, 5000); 
+        }
+
+        function cambiarApartado(id) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.apartado').forEach(div => div.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
+            document.getElementById('apartado-' + id).classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        window.abrirModalCotizacion = function(nombrePlan, precioPlan) { 
+            if (!verificarHorario()) {
+                mostrarAlertaHorario();
+                return; 
+            }
+
+            planSeleccionado = nombrePlan;
+            precioSeleccionado = precioPlan;
+            
+            document.getElementById('campos-landing').style.display = 'none';
+            document.getElementById('campos-landing').disabled = true;
+            document.getElementById('campos-corporativa').style.display = 'none';
+            document.getElementById('campos-corporativa').disabled = true;
+            document.getElementById('campos-personalizado').style.display = 'none';
+            document.getElementById('campos-personalizado').disabled = true;
+            document.getElementById('campos-programa').style.display = 'none';
+            document.getElementById('campos-programa').disabled = true;
+
+            if (nombrePlan === 'Landing Page') {
+                document.getElementById('campos-landing').style.display = 'block';
+                document.getElementById('campos-landing').disabled = false;
+            } else if (nombrePlan === 'Web Corporativa') {
+                document.getElementById('campos-corporativa').style.display = 'block';
+                document.getElementById('campos-corporativa').disabled = false;
+            } else if (nombrePlan === 'Plan Personalizado') {
+                document.getElementById('campos-personalizado').style.display = 'block';
+                document.getElementById('campos-personalizado').disabled = false;
+            } else if (nombrePlan === 'Plan Programa') {
+                document.getElementById('campos-programa').style.display = 'block';
+                document.getElementById('campos-programa').disabled = false;
+            }
+            
+            document.getElementById('resumen-plan').innerText = planSeleccionado;
+            document.getElementById('resumen-precio').innerText = precioSeleccionado;
+            document.getElementById('modal-formulario').classList.add('show'); 
+        }
+
+        const modal = document.getElementById('modal-formulario');
+        const btnCerrar = document.getElementById('btn-cerrar');
+        const form = document.getElementById('formulario-web');
+        const progressBar = document.getElementById('progress-bar');
+        
+        let pasoActual = 1;
+        const totalPasos = 3;
+
+        const cerrarModal = () => { modal.classList.remove('show'); setTimeout(resetForm, 400); };
+        btnCerrar.addEventListener('click', cerrarModal);
+
+        window.siguiente = function(paso) {
+            const stepActualDiv = document.getElementById(`step-${paso}`);
+            const inputs = stepActualDiv.querySelectorAll('input:not(:disabled)[required], select:not(:disabled)[required], textarea:not(:disabled)[required]');
+            let todoValido = true;
+            
+            inputs.forEach(input => {
+                if (!input.checkValidity()) {
+                    input.reportValidity(); 
+                    todoValido = false;
+                }
+            });
+
+            if (todoValido) {
+                document.getElementById(`step-${paso}`).classList.remove('active');
+                pasoActual++;
+                document.getElementById(`step-${pasoActual}`).classList.add('active');
+                actualizarBarra();
+            }
+        }
+
+        window.atras = function(paso) {
+            document.getElementById(`step-${paso}`).classList.remove('active');
+            pasoActual--;
+            document.getElementById(`step-${pasoActual}`).classList.add('active');
+            actualizarBarra();
+        }
+
+        function actualizarBarra() {
+            const porcentaje = (pasoActual / totalPasos) * 100;
+            progressBar.style.width = porcentaje + '%';
+        }
+
+        document.getElementById('cot-objetivo').addEventListener('change', function() {
+            const otroInput = document.getElementById('cot-objetivo-otro');
+            if (this.value === 'Otro') {
+                otroInput.style.display = 'block';
+                otroInput.required = true;
+            } else {
+                otroInput.style.display = 'none';
+                otroInput.required = false;
+                otroInput.value = '';
+            }
+        });
+
+        function resetForm() {
+            document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
+            document.getElementById('step-1').classList.add('active');
+            pasoActual = 1;
+            actualizarBarra();
+            
+            const nombre = document.getElementById('cot-nombre').value;
+            const correo = document.getElementById('cot-contacto').value;
+            form.reset();
+            document.getElementById('cot-nombre').value = nombre;
+            document.getElementById('cot-contacto').value = correo;
+            
+            document.getElementById('cot-objetivo-otro').style.display = 'none';
+            document.getElementById('cot-objetivo-otro').required = false;
+
+            document.getElementById('icon-binance').classList.remove('fade-out');
+            document.getElementById('info-binance').classList.remove('fade-in');
+            document.getElementById('btn-binance').classList.remove('selected');
+            document.getElementById('pago-seleccionado').value = "";
+            
+            document.getElementById('file-text').innerHTML = `📸 Toca para subir el <span>Comprobante de pago</span>`;
+            document.getElementById('upload-box').style.borderColor = "rgba(255, 255, 255, 0.2)";
+            comprobanteValido = false;
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault(); 
+            
+            if(document.getElementById('pago-seleccionado').value === "") {
+                alert("⚠️ Debes seleccionar el método de pago tocando el logo de Binance para poder enviar la solicitud.");
+                return;
+            }
+            if(!comprobanteValido) {
+                alert("⚠️ Es OBLIGATORIO subir el comprobante de pago real antes de enviar tu solicitud.");
+                return;
+            }
+
+            const btnSubmit = document.getElementById('btn-final-enviar');
+            btnSubmit.innerText = "Enviando...";
+            btnSubmit.disabled = true;
+
+            const cliente = document.getElementById('cot-nombre').value;
+            const nombreWeb = document.getElementById('cot-nombre-web').value;
+            const contacto = document.getElementById('cot-contacto').value;
+            const pago = document.getElementById('pago-seleccionado').value;
+            const estructura = document.getElementById('cot-estructura').value;
+            const colores = document.getElementById('cot-colores').value;
+
+            let objetivo = document.getElementById('cot-objetivo').value;
+            if (objetivo === 'Otro') {
+                objetivo = document.getElementById('cot-objetivo-otro').value;
+            }
+
+            let mensaje = `<b>🚀 NUEVA SOLICITUD: ${planSeleccionado} ($${precioSeleccionado} USD)</b>\n\n`;
+            mensaje += `<b>👤 Cliente/Marca:</b> ${cliente}\n`;
+            mensaje += `<b>🌐 Proyecto:</b> ${nombreWeb}\n`;
+            mensaje += `<b>📧 Correo:</b> ${contacto}\n`;
+            mensaje += `<b>💳 Método Pago:</b> ${pago}\n`;
+            mensaje += `<b>🎯 Objetivo:</b> ${objetivo}\n`;
+            mensaje += `<b>📂 Estructura:</b> ${estructura}\n`;
+            mensaje += `<b>🎨 Colores:</b> ${colores}\n`;
+
+            if (planSeleccionado === 'Landing Page') {
+                mensaje += `\n<b>📝 Detalles y Oferta:</b>\n${document.getElementById('lan-desc').value}\n`;
+            } else if (planSeleccionado === 'Web Corporativa') {
+                mensaje += `\n<b>🏢 Tipo de Negocio:</b> ${document.getElementById('corp-negocio').value}\n`;
+                mensaje += `<b>🎨 Logo:</b> ${document.getElementById('corp-logo').value}\n`;
+                mensaje += `<b>⚙️ Extras:</b>\n${document.getElementById('corp-extras').value}\n`;
+            } else if (planSeleccionado === 'Plan Personalizado') {
+                mensaje += `\n<b>🚀 Tipo de Sistema:</b> ${document.getElementById('pers-tipo').value}\n`;
+                mensaje += `<b>🧠 Lógica del Sistema:</b>\n${document.getElementById('pers-logica').value}\n`;
+                mensaje += `<b>🔌 Extras:</b>\n${document.getElementById('pers-extras').value || "Ninguno"}\n`;
+            } else if (planSeleccionado === 'Plan Programa') {
+                mensaje += `\n<b>💻 Plataforma:</b> ${document.getElementById('prog-plataforma').value}\n`;
+                mensaje += `<b>🔐 Acceso de Seguridad:</b> ${document.getElementById('prog-acceso').value}\n`;
+                mensaje += `<b>⚙️ Lógica del Software:</b>\n${document.getElementById('prog-logica').value}\n`;
+                mensaje += `<b>🛡️ Anti-Cheat:</b> ${document.getElementById('prog-nocheats').checked ? "Aceptada Oficialmente ✅" : "No"}\n`;
+                mensaje += `<b>🔌 Extras:</b>\n${document.getElementById('prog-extras').value || "Ninguno"}\n`;
+            }
+
+            try {
+                let fotoBase64 = null;
+                const fileInput = document.getElementById('comprobante-pago');
+                if (fileInput.files.length > 0) {
+                    fotoBase64 = await fileToBase64(fileInput.files[0]);
+                }
+
+                const payload = {
+                    mensaje: mensaje.substring(0, 4000),
+                    fotoBase64: fotoBase64
+                };
+
+                const respuesta = await fetch('/.netlify/functions/enviarMensaje', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!respuesta.ok) throw new Error('Error al enviar al servidor backend');
+
+                alert('✅ ¡Petición enviada con éxito! Revisa tu teléfono o correo, nos contactaremos contigo pronto.');
+                cerrarModal();
+            } catch (error) {
+                console.error(error);
+                alert('❌ Error al enviar. Por favor intenta de nuevo.');
+            } finally {
+                btnSubmit.innerText = "Finalizar y Enviar";
+                btnSubmit.disabled = false;
+            }
+        });
+
+        const btnBinance = document.getElementById('btn-binance');
+        const iconBinance = document.getElementById('icon-binance');
+        const infoBinance = document.getElementById('info-binance');
+        const pagoInput = document.getElementById('pago-seleccionado');
+
+        btnBinance.addEventListener('click', () => {
+            iconBinance.classList.add('fade-out');
+            infoBinance.classList.add('fade-in');
+            btnBinance.classList.add('selected');
+            pagoInput.value = 'Binance Pay';
+        });
+
+        const fileInput = document.getElementById('comprobante-pago');
+        const fileText = document.getElementById('file-text');
+        const scannerLine = document.getElementById('scanner');
+        const uploadBox = document.getElementById('upload-box');
+
+        fileInput.addEventListener('change', function(e) {
+            if(e.target.files.length > 0) {
+                const fileName = e.target.files[0].name;
+                comprobanteValido = false;
+                fileText.innerHTML = `⏳ <span>Analizando archivo...</span>`;
+                scannerLine.style.display = "block";
+                uploadBox.style.pointerEvents = "none";
+                
+                setTimeout(() => {
+                    scannerLine.style.display = "none";
+                    uploadBox.style.pointerEvents = "auto";
+                    uploadBox.style.borderColor = "#F3BA2F"; 
+                    fileText.innerHTML = `⚠️ Archivo recibido: <br><span style="color: #F3BA2F; font-size: 0.85rem;">Sujeto a revisión manual</span>`;
+                    comprobanteValido = true; 
+                }, 2000); 
+            } else {
+                fileText.innerHTML = `📸 Toca para subir el <span>Comprobante de pago</span>`;
+                comprobanteValido = false;
+            }
+        });
+
+        const modalSoporte = document.getElementById('modal-soporte');
+        const formSoporte = document.getElementById('formulario-soporte');
+
+        window.abrirModalSoporte = function() { 
+            if (!verificarHorario()) {
+                mostrarAlertaHorario();
+                return; 
+            }
+            modalSoporte.classList.add('show'); 
+        }
+
+        window.cerrarModalSoporte = function() { 
+            modalSoporte.classList.remove('show'); 
+            const correo = document.getElementById('soporte-contacto').value;
+            setTimeout(() => { 
+                formSoporte.reset(); 
+                document.getElementById('soporte-contacto').value = correo;
+                document.getElementById('file-text-soporte').innerHTML = `📸 Toca para subir tu <span>Comprobante o Captura</span>`; 
+            }, 400);
+        }
+
+        const fileInputSoporte = document.getElementById('comprobante-soporte');
+        const fileTextSoporte = document.getElementById('file-text-soporte');
+        
+        fileInputSoporte.addEventListener('change', function(e) {
+            if(e.target.files.length > 0) {
+                fileTextSoporte.innerHTML = `✅ Archivo cargado: <br><span style="color: #4CAF50; font-size: 0.85rem;">${e.target.files[0].name}</span>`;
+            } else {
+                fileTextSoporte.innerHTML = `📸 Toca para subir tu <span>Comprobante o Captura</span>`;
+            }
+        });
+
+        formSoporte.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btnSubmit = e.target.querySelector('button[type="submit"]');
+            btnSubmit.innerText = "Enviando...";
+            btnSubmit.disabled = true;
+
+            let mensaje = `<b>🛠️ NUEVO TICKET DE SOPORTE</b>\n\n`;
+            mensaje += `<b>📧 Correo:</b> ${document.getElementById('soporte-contacto').value}\n`;
+            mensaje += `<b>👤 Es cliente:</b> ${document.getElementById('soporte-cliente').value || "No especificado"}\n`;
+            mensaje += `<b>📝 Problema / Duda:</b>\n${document.getElementById('soporte-problema').value}\n`;
+
+            try {
+                let fotoBase64 = null;
+                if(fileInputSoporte && fileInputSoporte.files.length > 0){
+                    fotoBase64 = await fileToBase64(fileInputSoporte.files[0]);
+                }
+
+                const payload = {
+                    mensaje: mensaje.substring(0, 4000),
+                    fotoBase64: fotoBase64
+                };
+
+                const respuesta = await fetch('/.netlify/functions/enviarMensaje', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!respuesta.ok) throw new Error('Error al enviar al servidor backend');
+
+                alert('🛠️ ¡Mensaje enviado a soporte técnico! Nos contactaremos a la brevedad.');
+                cerrarModalSoporte();
+            } catch (error) {
+                console.error(error);
+                alert('❌ Error al enviar. Por favor intenta de nuevo.');
+            } finally {
+                btnSubmit.innerText = "Enviar Consulta";
+                btnSubmit.disabled = false;
+            }
+        });
+
+        window.addEventListener('click', (e) => { 
+            if (e.target == modal) { cerrarModal(); }
+            if (e.target == modalSoporte) { cerrarModalSoporte(); }
+        });
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC8AXzONYJZLoTGInyVPMkYUKZmAkSaoYk",
+            authDomain: "shimuwebs-ea04e.firebaseapp.com",
+            projectId: "shimuwebs-ea04e",
+            storageBucket: "shimuwebs-ea04e.firebasestorage.app",
+            messagingSenderId: "321250427506",
+            appId: "1:321250427506:web:e6d305b6171229ca2d78eb",
+            measurementId: "G-LXBH8SNRQL"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        window.loginGoogle = () => {
+            signInWithPopup(auth, provider).catch(err => alert("Error con Google: " + err.message));
+        };
+
+        window.registrarEmail = (e) => {
+            e.preventDefault();
+            const nombre = document.getElementById('reg-nombre').value;
+            const email = document.getElementById('reg-email').value;
+            const pass = document.getElementById('reg-password').value;
+            
+            createUserWithEmailAndPassword(auth, email, pass)
+                .then((userCredential) => {
+                    return updateProfile(userCredential.user, { displayName: nombre });
+                })
+                .catch(err => alert("Error al registrar: " + err.message));
+        };
+
+        window.loginEmail = (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-password').value;
+            signInWithEmailAndPassword(auth, email, pass)
+                .catch(err => alert("Error, revisa tus datos: " + err.message));
+        };
+
+        window.cerrarSesion = () => signOut(auth);
+
+        window.showRegister = () => {
+            document.getElementById('form-login').style.display = 'none';
+            document.getElementById('form-register').style.display = 'block';
+        };
+        window.showLogin = () => {
+            document.getElementById('form-register').style.display = 'none';
+            document.getElementById('form-login').style.display = 'block';
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.body.style.overflow = 'auto'; 
+                document.getElementById('btn-logout').style.display = 'block';
+
+                const inputCotContacto = document.getElementById('cot-contacto');
+                const inputSopContacto = document.getElementById('soporte-contacto');
+                const inputCotNombre = document.getElementById('cot-nombre');
+
+                inputCotContacto.value = user.email;
+                inputCotContacto.readOnly = true;
+                inputCotContacto.style.opacity = "0.7";
+
+                inputSopContacto.value = user.email;
+                inputSopContacto.readOnly = true;
+                inputSopContacto.style.opacity = "0.7";
+
+                if(user.displayName) {
+                    inputCotNombre.value = user.displayName;
+                    inputCotNombre.readOnly = true;
+                    inputCotNombre.style.opacity = "0.7";
+                }
+            } else {
+                document.getElementById('auth-overlay').style.display = 'flex';
+                document.body.style.overflow = 'hidden'; 
+                document.getElementById('btn-logout').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
